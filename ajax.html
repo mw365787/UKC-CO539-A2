@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Assignment 1</title>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+        <!-- CSS only -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1" crossorigin="anonymous">
+        
+        <script>
+
+            /*
+            This function retrieves a json object based on the parameter given.
+            It is used both in task1 and task2 for the button functionality.
+            */
+            $.fn.getPage = function(index){
+                    
+                    $.get({
+                        url: "https://www.cs.kent.ac.uk/people/staff/yh/co539/A2-data/hygiene.php?op=get&page="+ index,      //it's web url + index given
+                        dataType: "json",
+                        success: function(data){
+                            var txt = "";
+                            for(var i=0; i<data.length; i++){
+                                txt += "<tr><td class='name'>" + data[i].name + "</td><td class='address'>" + data[i].address + "</td><td>" + data[i].type + "</td><td>" 
+                                    + data[i].rating + "</td><td>" + data[i].date + "</td><td><button class='rate'> get rating </button></td></tr>";
+                            }
+                            $("#task1 tbody").append(txt);
+                        
+                    }
+                    })
+                }
+
+            /*
+             Function getRating retrieves the json file with the business.
+             It takes 'bussiness' and 'address' that we are looking for.
+             If we find matching results we print out the alert with average rating and total number of ratings.
+            */
+            $.fn.getRating = function(business, address){
+                 
+                $.get({
+                    url: "https://www.cs.kent.ac.uk/people/staff/yh/co539/A2-data/rating.php?business=" + business,
+                    dataType: "json",
+                    success: function(data){
+                            if(jQuery.isEmptyObject(data)){                             //checking whether the object is empty or not
+                                alert("There is no rating for this place yet!");
+                            }else{
+                                for(var i = 0; i<data.length; i++){                                 //Here we split the string and compare it with
+                                    var addressSplit = data[i].address.split(",");                  //our template address, if it is matching then
+                                    var test = 0;                                                   //we print out appropriate message.
+                                    for(var j = 0; j < addressSplit.length; j++){
+                                        if(address.includes(addressSplit[j])){
+                                           test++; 
+                                        }
+                                    }
+                                    if(test == addressSplit.length - 1)
+                                         alert("Average rating -> " + data[i].rating + "\n" + "Total number of ratings -> " + data[i].total);
+                                    }
+                                }
+                            }
+                        })
+                    }
+
+                /*
+                Searchbar function provides functionality of searchbar.
+                You input a string and it returns the object if the string is included in the name.
+                */
+                $.fn.searchBar = function(input){ 
+                    $("#task1 tbody").empty();
+                    $.get({
+                        url: "https://www.cs.kent.ac.uk/people/staff/yh/co539/A2-data/hygiene.php?op=search&name=" + input,      //it's web url + input given
+                        dataType: "json",
+                        success: function(data){
+                            var txt = "";
+                            for(var i=0; i<data.length; i++){
+                                txt += "<tr><td class='name'>" + data[i].name + "</td><td class='address'>" + data[i].address + "</td><td>" + data[i].type + "</td><td>" 
+                                    + data[i].rating + "</td><td>" + data[i].date + "</td><td><button class='rate'> get rating </button></td></tr>";
+                            }
+                            $("#task1 tbody").append(txt);
+                        
+                    }
+                    })
+                }
+
+            $(document).ready(function(){
+
+                
+                
+                /*
+                This function populates our top part of page with buttons.
+                It retrieves the number of pages which is 38.
+                */
+                $.get({
+                    url: "https://www.cs.kent.ac.uk/people/staff/yh/co539/A2-data/hygiene.php?op=pages",
+                    success: function(data){
+                        $("#buttons").append("<div id='row1'></div>");
+                        for(var n = 1; n <= data.pages / 2; n++){
+                            $("#row1").append("<input class='btn btn-info btn-block p-2 m-1' type='button' value='" + n + "'/>");
+                        }
+                        $("#buttons").append("<div id='row2'></div>");
+                        for(var n = data.pages /2 + 1; n <= data.pages; n++){
+                            $("#row2").append("<input class='btn btn-info btn-block p-2 m-1' type='button' value='" + n + "'/>");
+                        }
+                    },
+                    dataType: "json"
+                })
+
+                /*
+                We add onClick event to our buttons which is
+                the 'getPage(index)' function.
+                */
+                $("#buttons").on('click', '*', function(){
+                    $("#task1 tbody").empty();
+                    var pageNum = $(this).val();
+                    $(this).getPage(pageNum);
+                })
+
+
+                /*
+                This is a part where we add functionality to our 'get rating' button.
+                We need to retrieve params 'address' and 'name' before pasing it to getRating function.
+                */
+                $("#task1 tbody").on('click', 'button.rate', function(){
+                    var address = $(this).parents("tr").children("td.address").text();
+                    var name = $(this).parents("tr").children("td.name").text();
+                    $(this).getRating(name, address);
+                })
+
+
+                /*
+                Search form.
+                event.preventDefault() prevents from refreshing the page
+                */
+                $("form").submit(function(){
+                    event.preventDefault();
+                    var input = $("#textfield").val();
+                    $(this).searchBar(input);
+                })
+
+                
+            })    
+        </script>
+    </head>
+    <body>
+        <div class="col-lg-12" id="buttons">
+
+        </div>
+        <div class="part1">
+        <table id="task1" class="table w-auto">
+            <thead class="fw-bold">
+                <tr><td>name</td><td>address</td><td>type</td><td> hygiene rating</td><td>date</td><td>/</td></tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+    <div class="lastpart row h-50">
+        <div class="my-auto">
+        <form id="#form">
+            <label class="form-label">Business name:</label>
+            <input type="text" id="textfield">
+            <input type="submit" value="search">
+        </form>
+    </div>
+    </body>
+</html>
